@@ -14,11 +14,22 @@ export default class Paper {
         const bottomRight: Point = new Point(1, 0);
 
         this.#points = [topLeft, bottomLeft, topRight, bottomRight];
+        this.sortPoints();
+
         this.#lines = [
             new Edge(topLeft, topRight),
             new Edge(topLeft, bottomLeft),
             new Edge(bottomLeft, bottomRight),
             new Edge(topRight, bottomRight)
-        ]
+        ];
+        this.sortLines();
+    }
+
+    sortPoints(): void {
+        this.#points.toSorted(Point.compare);
+    }
+
+    sortLines(): void {
+        this.#lines.toSorted(LineSegment.compare);
     }
 }
