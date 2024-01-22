@@ -56,4 +56,20 @@ export default class Vector {
 
         return copy;
     }
+
+    toDifference(other: Vector): void {
+        if (other == null) {
+            throw new Error("Vector is null");
+        }
+
+        this.#x -= other.getX();
+        this.#y -= other.getY();
+    }
+
+    getDifference(other: Vector): Vector {
+        const copy: Vector = this.getCopy();
+        copy.toDifference(other);
+
+        return copy;
+    }
 }
