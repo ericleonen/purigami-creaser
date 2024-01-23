@@ -17,7 +17,8 @@ function render(
     canvas: HTMLCanvasElement | null, 
     points: Point[], 
     lines: LineSegment[],
-    mousePos: [number, number] | undefined 
+    mousePos: [number, number] | undefined,
+    selectedStart: Point | undefined
 ) {
     if (!canvas) return;
 
@@ -31,7 +32,7 @@ function render(
     }
 
     for (const point of points) {
-        drawPoint(context, point, mousePos);
+        drawPoint(context, point, mousePos, selectedStart);
     }
 }
 
@@ -43,13 +44,15 @@ function drawPoint(
     context: CanvasRenderingContext2D, 
     point: Point,
     mousePos: [number, number] | undefined,
+    selectedStart: Point | undefined,
     color: string = "#000", 
     hoverColor: string = "#FF0000",
     radius: number = 10,
     hoverRadius: number = 15,
 ) {
     const coord = point2Coordinate(point);
-    const hovered = mousePos && euclideanDistance(mousePos, coord) <= hoverRadius;
+    const hovered = (selectedStart && Point.compare(selectedStart, point) === 0) || 
+        (mousePos && euclideanDistance(mousePos, coord) <= hoverRadius);
 
     context.beginPath();
     context.fillStyle = hovered ? hoverColor : color;
@@ -91,6 +94,7 @@ export default function Paper() {
     ]);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [mousePos, setMousePos] = useState<[number, number]>();
+    const [selectedStart, setSelectedStart] = useState<Point>();
 
     const handleMouseMove = (e: React.MouseEvent) => {
         const canvas = canvasRef.current;
@@ -106,15 +110,36 @@ export default function Paper() {
         ]);
     }
 
+    const handleClick = () => {
+        if (!mousePos) return;
+        let selected: Point | undefined = undefined;
+
+        for (const point of points) {
+            if (euclideanDistance(point2Coordinate(point), mousePos) <= 15) {
+                selected = point;
+            }
+        }
+
+        if (!selected) return;
+
+        if (!selectedStart) setSelectedStart(selected);
+        else {
+            // make crease
+            setSelectedStart(undefined);
+        }
+
+    }
+
     useEffect(() => {
-        render(canvasRef.current, points, lines, mousePos);
-    }, [points, lines, render, JSON.stringify(mousePos)]);
+        render(canvasRef.current, points, lines, mousePos, selectedStart);
+    }, [points, lines, render, JSON.stringify(mousePos), selectedStart]);
 
     return (
         <canvas
             ref={canvasRef}
             width={CANVAS_SIZE_PIXELS}
             height={CANVAS_SIZE_PIXELS}
+            onClick={handleClick}
             onMouseMove={handleMouseMove}
             onMouseOut={() => setMousePos(undefined)}
             className="h-[500px] w-[500px] border-2"
