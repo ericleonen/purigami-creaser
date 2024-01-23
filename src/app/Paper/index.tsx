@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react"
 import Point from "../concepts/Point";
 import LineSegment from "../concepts/LineSegment";
 import Edge from "../concepts/Edge";
+import Vector from "../concepts/Vector";
+import Line from "../concepts/Line";
+import Crease from "../concepts/Crease";
 
 const topLeft: Point = new Point(0, 1);
 const bottomLeft: Point = new Point(0, 0);
@@ -68,7 +71,7 @@ function drawLine(
 ) {
     context.beginPath();
     context.lineWidth = size;
-    context.strokeStyle = color;
+    context.strokeStyle = line instanceof Crease ? "#808080" : color;
     context.moveTo(...point2Coordinate(line.getStart()));
     context.lineTo(...point2Coordinate(line.getEnd()));
     context.stroke();
@@ -81,6 +84,53 @@ function point2Coordinate(point: Point): [number, number] {
     return [
         point.getX() * scaler + offset,
         (1 - point.getY()) * scaler + offset 
+    ]
+}
+
+function crease(p1: Point, p2: Point, points: Point[], lines: LineSegment[]): [Point[], LineSegment[]] {
+    const avg = p1.getSum(p2);
+    avg.toScaled(0.5);
+
+    const v: Vector = p2.getDifference(p1);
+    v.toOrthogonal();
+
+    const infLine = new Line(avg, v);
+    const endpoints: Set<Point> = new Set();
+    const newPoints: Set<Point> = new Set();
+
+    for (const line of lines) {
+        const intersection = line.getIntersection(infLine);
+
+        if (intersection) {
+            if (line instanceof Edge) {
+                endpoints.add(intersection);
+            }
+
+            if (!points.some((point: Point) => Point.compare(point, intersection) === 0)) {
+                newPoints.add(intersection);
+            }
+        }
+    }
+
+    if (endpoints.size !== 2) {
+        throw new Error();
+    }
+
+    let e1: Point | undefined = undefined;
+    let e2: Point | undefined = undefined;
+
+    for (const e of endpoints) {
+        if (!e1) e1 = e;
+        else e2 = e;
+    }
+
+    if (!e1 || !e2) {
+        throw new Error();
+    }
+
+    return [
+        [...points, ...newPoints],
+        [...lines, new Crease(e1, e2)]
     ]
 }
 
@@ -126,6 +176,10 @@ export default function Paper() {
         else {
             // make crease
             setSelectedStart(undefined);
+            const [newPoints, newLines] = crease(selectedStart, selected, points, lines);
+
+            setPoints(newPoints);
+            setLines(newLines);
         }
 
     }

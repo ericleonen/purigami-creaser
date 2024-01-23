@@ -13,4 +13,8 @@ export default class Line {
     getStart(): Point {
         return this.#start;
     }
+
+    getVector(): Vector {
+        return this.#vector;
+    }
 }

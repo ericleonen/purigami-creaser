@@ -1,6 +1,7 @@
 import { swap } from "@/helpers";
 import Line from "./Line";
 import Point from "./Point";
+import Vector from "./Vector";
 
 export default class LineSegment extends Line {
     #end: Point;
@@ -31,4 +32,27 @@ export default class LineSegment extends Line {
             return diffStart;
         }
     }
+
+    getIntersection(line: Line): Point | null {
+        const a: Point = this.getStart();
+        const v: Vector = this.getVector();
+        const b: Point = line.getStart();
+        const u: Vector = line.getVector();
+
+        const det = v.getX() * u.getY() - v.getY() * u.getX();
+
+        if (det != 0) {
+            const s = (u.getX() * (a.getY() - b.getY()) - u.getY() * (a.getX() - b.getX())) / det;
+        
+            if (s == 0) {
+                return a;
+            } else if (s == 1) {
+                return this.#end;
+            } else if (Math.abs(s) < 1) {
+                return a.getSum(v.getScaled(s));
+            }
+        }
+
+        return null;
+    } 
 }
